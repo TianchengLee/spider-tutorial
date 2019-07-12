@@ -146,8 +146,65 @@ $.html()
 
 同样也可以通过jQuery的api来获取DOM元素中的属性和内容
 
-### 使用cheerio解析HTML
+### 使用cheerio库解析HTML
 
-分析网页中所有img标签所在结构
+1. 分析网页中所有img标签所在结构
 
 ![1562844621019](assets/1562844621019.png)
+
+2. 使用jQuery API获取所有img的src属性
+
+```js
+const http = require('http')
+const cheerio = require('cheerio')
+let req = http.request('http://web.itheima.com/teacher.html', res => {
+  let chunks = []
+  res.on('data', chunk => {
+    chunks.push(chunk)
+  })
+  res.on('end', () => {
+    // console.log(Buffer.concat(chunks).toString('utf-8'))
+    let html = Buffer.concat(chunks).toString('utf-8')
+    let $ = cheerio.load(html)
+    let imgArr = Array.prototype.map.call($('.tea_main .tea_con .li_img > img'), (item) => 'http://web.itheima.com/' + $(item).attr('src'))
+    console.log(imgArr)
+    // let imgArr = []
+    // $('.tea_main .tea_con .li_img > img').each((i, item) => {
+    //   let imgPath = 'http://web.itheima.com/' + $(item).attr('src')
+    //   imgArr.push(imgPath)
+    // })
+    // console.log(imgArr)
+  })
+})
+
+req.end()
+```
+
+## 使用download库批量下载图片
+
+```js
+const http = require('http')
+const cheerio = require('cheerio')
+const download = require('download')
+let req = http.request('http://web.itheima.com/teacher.html', res => {
+  let chunks = []
+  res.on('data', chunk => {
+    chunks.push(chunk)
+  })
+  res.on('end', () => {
+    // console.log(Buffer.concat(chunks).toString('utf-8'))
+    let html = Buffer.concat(chunks).toString('utf-8')
+    let $ = cheerio.load(html)
+    let imgArr = Array.prototype.map.call($('.tea_main .tea_con .li_img > img'), (item) => encodeURI('http://web.itheima.com/' + $(item).attr('src')))
+    // console.log(imgArr)
+
+    Promise.all(imgArr.map(x => download(x, 'dist'))).then(() => {
+      console.log('files downloaded!');
+    });
+  })
+})
+
+req.end()
+```
+
+注意事项：如有中文文件名，需要使用base64编码
