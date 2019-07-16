@@ -61,7 +61,7 @@
 1. js基础
 2. node基础
 
-# 第二章 爬虫基础
+# 第2章 爬虫基础
 
 学习目标:
 
@@ -213,3 +213,259 @@ req.end()
 ```
 
 注意事项：如有中文文件名，需要使用base64编码
+
+## 爬取新闻信息
+
+爬取目标：`http://www.itcast.cn/newsvideo/newslist.html`
+
+![1563271100064](assets/1563271100064.png)
+
+大部分新闻网站，现在都采取前后端分离的方式，也就是前端页面先写好模板，等网页加载完毕后，发送Ajax再获取数据，将其渲染到模板中。所以如果使用相同方式来获取目标网站的HTML页面，请求到的只是模板，并不会有数据：
+
+![1563271746307](assets/1563271746307.png)
+
+![1563271689010](assets/1563271689010.png)
+
+此时，如果还希望使用当前方法爬取数据，就需要分析该网站的ajax请求是如何发送的，可以打开network面板来调试：
+
+![1563271869472](assets/1563271869472.png)
+
+分析得出对应的ajax请求后，找到其URL，向其发送请求即可
+
+![1563271962550](assets/1563271962550.png)
+
+代码如下：
+
+```js
+// 引入http模块
+const http = require('http')
+const cheerio = require('cheerio')
+const download = require('download')
+
+// 创建请求对象 (此时未发送http请求)
+const url = 'http://www.itcast.cn/news/json/f1f5ccee-1158-49a6-b7c4-f0bf40d5161a.json'
+let req = http.request(url, res => {
+  // 异步的响应
+  // console.log(res)
+  let chunks = []
+  // 监听data事件,获取传递过来的数据片段
+  // 拼接数据片段
+  res.on('data', c => chunks.push(c))
+
+  // 监听end事件,获取数据完毕时触发
+  res.on('end', () => {
+    // 拼接所有的chunk,并转换成字符串 ==> html字符串
+    // console.log(Buffer.concat(chunks).toString('utf-8'))
+    let result = Buffer.concat(chunks).toString('utf-8')
+    console.log(JSON.parse(result))
+  })
+})
+
+// 将请求发出去
+req.end()
+```
+
+如果遇到请求限制，还可以模拟真实浏览器的请求头：
+
+```js
+// 引入http模块
+const http = require('http')
+const cheerio = require('cheerio')
+const download = require('download')
+
+// 创建请求对象 (此时未发送http请求)
+const url = 'http://www.itcast.cn/news/json/f1f5ccee-1158-49a6-b7c4-f0bf40d5161a.json'
+let req = http.request(url, {
+  headers: {
+    "Host": "www.itcast.cn",
+    "Connection": "keep-alive",
+    "Content-Length": "0",
+    "Accept": "*/*",
+    "Origin": "http://www.itcast.cn",
+    "X-Requested-With": "XMLHttpRequest",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+    "DNT": "1",
+    "Referer": "http://www.itcast.cn/newsvideo/newslist.html",
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Cookie": "UM_distinctid=16b8a0c1ea534c-0c311b256ffee7-e343166-240000-16b8a0c1ea689c; bad_idb2f10070-624e-11e8-917f-9fb8db4dc43c=8e1dcca1-9692-11e9-97fb-e5908bcaecf8; parent_qimo_sid_b2f10070-624e-11e8-917f-9fb8db4dc43c=921b3900-9692-11e9-9a47-855e632e21e7; CNZZDATA1277769855=1043056636-1562825067-null%7C1562825067; cid_litiancheng_itcast.cn=TUd3emFUWjBNV2syWVRCdU5XTTRhREZs; PHPSESSID=j3ppafq1dgh2jfg6roc8eeljg2; CNZZDATA4617777=cnzz_eid%3D926291424-1561388898-http%253A%252F%252Fmail.itcast.cn%252F%26ntime%3D1563262791; Hm_lvt_0cb375a2e834821b74efffa6c71ee607=1561389179,1563266246; qimo_seosource_22bdcd10-6250-11e8-917f-9fb8db4dc43c=%E7%AB%99%E5%86%85; qimo_seokeywords_22bdcd10-6250-11e8-917f-9fb8db4dc43c=; href=http%3A%2F%2Fwww.itcast.cn%2F; bad_id22bdcd10-6250-11e8-917f-9fb8db4dc43c=f2f41b71-a7a4-11e9-93cc-9b702389a8cb; nice_id22bdcd10-6250-11e8-917f-9fb8db4dc43c=f2f41b72-a7a4-11e9-93cc-9b702389a8cb; openChat22bdcd10-6250-11e8-917f-9fb8db4dc43c=true; parent_qimo_sid_22bdcd10-6250-11e8-917f-9fb8db4dc43c=fc61e520-a7a4-11e9-94a8-01dabdc2ed41; qimo_seosource_b2f10070-624e-11e8-917f-9fb8db4dc43c=%E7%AB%99%E5%86%85; qimo_seokeywords_b2f10070-624e-11e8-917f-9fb8db4dc43c=; accessId=b2f10070-624e-11e8-917f-9fb8db4dc43c; pageViewNum=2; nice_idb2f10070-624e-11e8-917f-9fb8db4dc43c=20d2a1d1-a7a8-11e9-bc20-e71d1b8e4bb6; openChatb2f10070-624e-11e8-917f-9fb8db4dc43c=true; Hm_lpvt_0cb375a2e834821b74efffa6c71ee607=1563267937"
+  }
+}, res => {
+  // 异步的响应
+  // console.log(res)
+  let chunks = []
+  // 监听data事件,获取传递过来的数据片段
+  // 拼接数据片段
+  res.on('data', c => chunks.push(c))
+
+  // 监听end事件,获取数据完毕时触发
+  res.on('end', () => {
+    // 拼接所有的chunk,并转换成字符串 ==> html字符串
+    // console.log(Buffer.concat(chunks).toString('utf-8'))
+    let result = Buffer.concat(chunks).toString('utf-8')
+    console.log(JSON.parse(result))
+  })
+})
+
+// 将请求发出去
+req.end()
+```
+
+注意：请求头的内容，可以先通过真正的浏览器访问一次后获取
+
+## 封装爬虫基础库
+
+以上代码重复的地方非常多，可以考虑以面向对象的思想进行封装，进一步的提高代码复用率，为了方便开发，保证代码规范，建议使用TypeScript进行封装
+
+**以下知识点为扩展内容，需要对面向对象和TypeScript有一定了解！**
+
+TS配置：
+
+```json
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "es2015", 
+    "module": "commonjs", 
+    "outDir": "./bin", 
+    "rootDir": "./src", 
+    "strict": true,
+    "esModuleInterop": true 
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}
+```
+
+Spider抽象类：
+
+```ts
+// 引入http模块
+const http = require('http')
+import SpiderOptions from './interfaces/SpiderOptions'
+
+export default abstract class Spider {
+  options: SpiderOptions;
+  constructor(options: SpiderOptions) {
+    this.options = options
+    this.start()
+  }
+  start(): void {
+    // 创建请求对象 (此时未发送http请求)
+    let req = http.request(this.options.url, {
+      headers: this.options.headers
+    }, (res: any) => {
+      // 异步的响应
+      // console.log(res)
+      let chunks: any[] = []
+      // 监听data事件,获取传递过来的数据片段
+      // 拼接数据片段
+      res.on('data', (c: any) => chunks.push(c))
+
+      // 监听end事件,获取数据完毕时触发
+      res.on('end', () => {
+        // 拼接所有的chunk,并转换成字符串 ==> html字符串
+        let htmlStr = Buffer.concat(chunks).toString('utf-8')
+        this.onCatchHTML(htmlStr)
+      })
+    })
+
+    // 将请求发出去
+    req.end()
+
+  }
+  abstract onCatchHTML(result: string): any
+}
+
+export default Spider
+```
+
+SpiderOptions接口：
+
+```ts
+export default interface SpiderOptions {
+  url: string,
+  headers?: object
+}
+```
+
+PhotoListSpider类：
+
+```ts
+import Spider from './Spider'
+const cheerio = require('cheerio')
+const download = require('download')
+export default class PhotoListSpider extends Spider {
+  onCatchHTML(result: string) {
+    // console.log(result)
+    let $ = cheerio.load(result)
+    let imgs = Array.prototype.map.call($('.tea_main .tea_con .li_img > img'), item => 'http://web.itheima.com/' + encodeURI($(item).attr('src')))
+    Promise.all(imgs.map(x => download(x, 'dist'))).then(() => {
+      console.log('files downloaded!');
+    });
+  }
+}
+```
+
+NewsListSpider类：
+
+```ts
+import Spider from "./Spider";
+
+export default class NewsListSpider extends Spider {
+  onCatchHTML(result: string) {
+    console.log(JSON.parse(result))
+  }
+}
+```
+
+测试类：
+
+```ts
+import Spider from './Spider'
+import PhotoListSpider from './PhotoListSpider'
+import NewsListSpider from './NewsListSpider'
+
+let spider1: Spider = new PhotoListSpider({
+  url: 'http://web.itheima.com/teacher.html'
+})
+
+let spider2: Spider = new NewsListSpider({
+  url: 'http://www.itcast.cn/news/json/f1f5ccee-1158-49a6-b7c4-f0bf40d5161a.json',
+  headers: {
+    "Host": "www.itcast.cn",
+    "Connection": "keep-alive",
+    "Content-Length": "0",
+    "Accept": "*/*",
+    "Origin": "http://www.itcast.cn",
+    "X-Requested-With": "XMLHttpRequest",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+    "DNT": "1",
+    "Referer": "http://www.itcast.cn/newsvideo/newslist.html",
+    "Accept-Encoding": "gzip, deflate",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    "Cookie": "UM_distinctid=16b8a0c1ea534c-0c311b256ffee7-e343166-240000-16b8a0c1ea689c; bad_idb2f10070-624e-11e8-917f-9fb8db4dc43c=8e1dcca1-9692-11e9-97fb-e5908bcaecf8; parent_qimo_sid_b2f10070-624e-11e8-917f-9fb8db4dc43c=921b3900-9692-11e9-9a47-855e632e21e7; CNZZDATA1277769855=1043056636-1562825067-null%7C1562825067; cid_litiancheng_itcast.cn=TUd3emFUWjBNV2syWVRCdU5XTTRhREZs; PHPSESSID=j3ppafq1dgh2jfg6roc8eeljg2; CNZZDATA4617777=cnzz_eid%3D926291424-1561388898-http%253A%252F%252Fmail.itcast.cn%252F%26ntime%3D1563262791; Hm_lvt_0cb375a2e834821b74efffa6c71ee607=1561389179,1563266246; qimo_seosource_22bdcd10-6250-11e8-917f-9fb8db4dc43c=%E7%AB%99%E5%86%85; qimo_seokeywords_22bdcd10-6250-11e8-917f-9fb8db4dc43c=; href=http%3A%2F%2Fwww.itcast.cn%2F; bad_id22bdcd10-6250-11e8-917f-9fb8db4dc43c=f2f41b71-a7a4-11e9-93cc-9b702389a8cb; nice_id22bdcd10-6250-11e8-917f-9fb8db4dc43c=f2f41b72-a7a4-11e9-93cc-9b702389a8cb; openChat22bdcd10-6250-11e8-917f-9fb8db4dc43c=true; parent_qimo_sid_22bdcd10-6250-11e8-917f-9fb8db4dc43c=fc61e520-a7a4-11e9-94a8-01dabdc2ed41; qimo_seosource_b2f10070-624e-11e8-917f-9fb8db4dc43c=%E7%AB%99%E5%86%85; qimo_seokeywords_b2f10070-624e-11e8-917f-9fb8db4dc43c=; accessId=b2f10070-624e-11e8-917f-9fb8db4dc43c; pageViewNum=2; nice_idb2f10070-624e-11e8-917f-9fb8db4dc43c=20d2a1d1-a7a8-11e9-bc20-e71d1b8e4bb6; openChatb2f10070-624e-11e8-917f-9fb8db4dc43c=true; Hm_lpvt_0cb375a2e834821b74efffa6c71ee607=1563267937"
+  }
+})
+```
+
+封装后，如果需要写新的爬虫，则可以直接继承Spider类后，在测试类中进行测试即可，仅需实现具体的爬虫类onCatchHTML方法，测试时传入url和headers即可。
+
+而且全部爬虫的父类均为Spider，后期管理起来也非常方便！
+
+# 第3章 爬虫高级
+
+学习目标：
+
+- 使用Selenium库爬取动态网页
+- 反反爬虫技术
+
+## Selenium简介
+
+
+
