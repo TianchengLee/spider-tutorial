@@ -239,8 +239,6 @@ req.end()
 ```js
 // 引入http模块
 const http = require('http')
-const cheerio = require('cheerio')
-const download = require('download')
 
 // 创建请求对象 (此时未发送http请求)
 const url = 'http://www.itcast.cn/news/json/f1f5ccee-1158-49a6-b7c4-f0bf40d5161a.json'
@@ -319,6 +317,8 @@ req.end()
 
 **以下知识点为扩展内容，需要对面向对象和TypeScript有一定了解！**
 
+执行`tsc --init`初始化项目，生成ts配置文件
+
 TS配置：
 
 ```json
@@ -351,14 +351,15 @@ import SpiderOptions from './interfaces/SpiderOptions'
 
 export default abstract class Spider {
   options: SpiderOptions;
-  constructor(options: SpiderOptions) {
+  constructor(options: SpiderOptions = { url: '', method: 'get' }) {
     this.options = options
     this.start()
   }
   start(): void {
     // 创建请求对象 (此时未发送http请求)
     let req = http.request(this.options.url, {
-      headers: this.options.headers
+      headers: this.options.headers,
+      method: this.options.method
     }, (res: any) => {
       // 异步的响应
       // console.log(res)
@@ -390,6 +391,7 @@ SpiderOptions接口：
 ```ts
 export default interface SpiderOptions {
   url: string,
+  method?: string,
   headers?: object
 }
 ```
@@ -437,6 +439,7 @@ let spider1: Spider = new PhotoListSpider({
 
 let spider2: Spider = new NewsListSpider({
   url: 'http://www.itcast.cn/news/json/f1f5ccee-1158-49a6-b7c4-f0bf40d5161a.json',
+  method: 'post',
   headers: {
     "Host": "www.itcast.cn",
     "Connection": "keep-alive",
@@ -462,7 +465,7 @@ let spider2: Spider = new NewsListSpider({
 
 学习目标：
 
-- 使用Selenium库爬取动态网页
+- 使用Selenium库爬取前端渲染的网页
 - 反反爬虫技术
 
 ## Selenium简介
