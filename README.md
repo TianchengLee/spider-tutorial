@@ -536,7 +536,7 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 
 了解完后，还需要知道，如何实现爬虫？
 
-1. 自动打开拉勾网并搜索"传智播客"
+1. 自动打开拉勾网并搜索"前端"
 2. 获取所有列表项
 3. 获取其中想要的信息数据
 
@@ -560,7 +560,7 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 
 而Selenium打开的就是一个自动化测试的浏览器，和用户正常使用的浏览器并无差别，所以再厉害的反爬虫技术，也无法直接把它干掉，除非这个网站连普通用户都想放弃掉（12306曾经迫于无奈这样做过）
 
-### SeleniumAPI学习
+### Selenium API学习
 
 核心对象：
 
@@ -611,6 +611,7 @@ options.addArguments('Cookie=user_trace_token=20191130095945-889e634a-a79b-4b61-
 
 - getText()  获取文本内容
 - sendKeys()  发送一些按键指令
+- click()  点击该元素
 
 ![1563351143458](assets/1563351143458.png)
 
@@ -619,7 +620,7 @@ options.addArguments('Cookie=user_trace_token=20191130095945-889e634a-a79b-4b61-
 1. 使用driver打开拉勾网主页
 
 2. 找到全国站并点击一下
-3. 输入“传智播客”并回车
+3. 输入“前端”并回车
 
 ```js
 const { Builder, By, Key } = require('selenium-webdriver');
@@ -672,7 +673,7 @@ const { Builder, By, Key } = require('selenium-webdriver');
 思路如下：
 
 1. 定义初始页码
-2. 获取数据后，获取页面上的总页码定义最大页码
+2. 获取数据后，获取页面上的总页码，定义最大页码
 3. 开始获取数据时打印当前正在获取的页码数
 4. 获取完一页数据后，当前页码自增，然后判断是否达到最大页码
 5. 查找下一页按钮并调用点击api，进行自动翻页
@@ -733,7 +734,7 @@ async function getData() {
       console.log(results)
 
       currentPageNum++
-      if (currentPageNum < maxPageNum) {
+      if (currentPageNum <= maxPageNum) {
         await driver.findElement(By.className('pager_next')).click()
         await getData(driver)
       }
@@ -772,3 +773,4 @@ async function getData() {
 8. 使用Selenium自动翻页
 
 学习不是百米冲刺，而是一场马拉松，现在所学只是起点，更多的是需要大家找到学习方法，不断的学习提升自己，一起加油！
+
